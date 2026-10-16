@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#102a43">
+  <title>GURU MU — Absensi Siswa Otomatis</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <script src="{{ url_for('static', filename='vendor/jsQR.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
+</head>
+<body>
+  <main id="login-screen" class="login-screen" hidden>
+    <section class="login-card">
+      <div class="brand-mark large">GM</div>
+      <p class="eyebrow">PORTAL GURU</p>
+      <h1>GURU MU</h1>
+      <p class="login-subtitle">Absensi siswa otomatis, lebih mudah setiap hari.</p>
+      <form id="login-form" class="form-stack">
+        <label>Username
+          <input name="username" autocomplete="username" required autofocus placeholder="Masukkan username">
+        </label>
+        <label>Password
+          <span class="password-field">
+            <input id="login-password" name="password" type="password" autocomplete="current-password" required placeholder="Masukkan password">
+            <button class="password-toggle" type="button" data-toggle-password="login-password" aria-label="Tampilkan password">Lihat</button>
+          </span>
+        </label>
+        <p id="login-error" class="form-error" role="alert"></p>
+        <button class="button primary full" type="submit">Masuk ke dashboard <span aria-hidden="true">→</span></button>
+      </form>
+      <p class="login-footnote">Sistem absensi aman untuk sekolah Anda</p>
+    </section>
+  </main>
+
+  <div id="app-shell" class="app-shell" hidden>
+    <aside id="sidebar" class="sidebar">
+      <a class="brand" href="#" data-page="dashboard" aria-label="GURU MU dashboard">
+        <span class="brand-mark">GM</span>
+        <span><strong>GURU MU</strong><small>ABSENSI SISWA</small></span>
+      </a>
+      <p class="nav-caption">MENU UTAMA</p>
+      <nav class="main-nav" aria-label="Navigasi utama">
+        <button class="nav-link active" data-page="dashboard"><span class="nav-icon">⌂</span>Dashboard</button>
+        <button class="nav-link" data-page="scan"><span class="nav-icon">▦</span>Scan Absensi</button>
+        <button class="nav-link" data-page="students"><span class="nav-icon">♙</span>Data Siswa</button>
+        <button class="nav-link" data-page="reports"><span class="nav-icon">▤</span>Rekap Absensi</button>
+        <button class="nav-link" data-page="cards"><span class="nav-icon">▣</span>Kartu Siswa</button>
+      </nav>
+      <div class="sidebar-bottom">
+        <button class="nav-link" data-page="settings"><span class="nav-icon">⚙</span>Pengaturan</button>
+        <div class="sidebar-user">
+          <span class="avatar">G</span>
+          <span class="user-details"><strong id="sidebar-username">Guru</strong><small>Administrator</small></span>
+          <button id="logout-button" class="icon-button logout-button" title="Keluar" aria-label="Keluar">↗</button>
+        </div>
+      </div>
+    </aside>
+
+    <div class="main-column">
+      <header class="topbar">
+        <button id="menu-toggle" class="icon-button mobile-menu" aria-label="Buka menu">☰</button>
+        <div class="breadcrumb"><span>GURU MU</span><span aria-hidden="true">/</span><strong id="page-heading">Dashboard</strong></div>
+        <div class="topbar-right"><span class="live-dot"></span><span id="clock-label"></span><span class="topbar-date" id="topbar-date"></span></div>
+      </header>
+
+      <main class="page-content">
+        <section class="page-view" data-view="dashboard">
+          <div class="welcome-row">
+            <div><p class="eyebrow">RINGKASAN HARI INI</p><h1>Selamat datang, <span id="welcome-name">Guru</span>!</h1><p class="muted">Pantau kehadiran siswa dan kelola aktivitas kelas.</p></div>
+            <button class="button primary scan-cta" data-page="scan"><span class="scan-symbol">▦</span> Mulai Scan Absensi</button>
+          </div>
+          <div class="stat-grid">
+            <article class="stat-card total-stat"><span class="stat-icon">♙</span><span class="stat-label">Total Siswa</span><strong id="stat-total">0</strong><small>Siswa terdaftar</small></article>
+            <article class="stat-card present-stat"><span class="stat-icon">✓</span><span class="stat-label">Hadir</span><strong id="stat-present">0</strong><small>Siswa hadir hari ini</small></article>
+            <article class="stat-card izin-stat"><span class="stat-icon">✉</span><span class="stat-label">Izin</span><strong id="stat-izin">0</strong><small>Dengan keterangan izin</small></article>
+            <article class="stat-card sakit-stat"><span class="stat-icon">✚</span><span class="stat-label">Sakit</span><strong id="stat-sakit">0</strong><small>Dengan keterangan sakit</small></article>
+            <article class="stat-card alpa-stat"><span class="stat-icon">!</span><span class="stat-label">Alpa</span><strong id="stat-alpa">0</strong><small>Tanpa keterangan</small></article>
+            <article class="stat-card pending-stat"><span class="stat-icon">◷</span><span class="stat-label">Belum Absen</span><strong id="stat-pending">0</strong><small>Masih menunggu absensi</small></article>
+          </div>
+          <div class="dashboard-grid">
+            <section class="panel attendance-panel">
+              <div class="panel-heading"><div><p class="eyebrow">KEHADIRAN</p><h2>Persentase kehadiran</h2></div><span class="panel-date" id="dashboard-date"></span></div>
+              <div class="attendance-overview">
+                <div class="donut" id="attendance-donut"><svg viewBox="0 0 120 120" aria-hidden="true"><circle class="donut-track" cx="60" cy="60" r="50"></circle><circle id="attendance-ring" class="donut-progress" cx="60" cy="60" r="50"></circle></svg><div><strong id="stat-percentage">0%</strong><span>Hadir</span></div></div>
+                <div class="legend-list">
+                  <span><i class="legend-dot blue"></i>Hadir <strong id="legend-present">0</strong></span>
+                  <span><i class="legend-dot orange"></i>Izin <strong id="legend-izin">0</strong></span>
+                  <span><i class="legend-dot purple"></i>Sakit <strong id="legend-sakit">0</strong></span>
+                  <span><i class="legend-dot red"></i>Alpa <strong id="legend-alpa">0</strong></span>
+                </div>
+              </div>
+            </section>
+            <section class="panel session-panel">
+              <div class="panel-heading"><div><p class="eyebrow">SESI KELAS</p><h2>Absensi hari ini</h2></div><button class="text-button" data-page="scan">Kelola sesi →</button></div>
+              <div id="dashboard-sessions" class="session-list"><p class="empty-state">Belum ada sesi absensi hari ini.</p></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="page-view" data-view="scan" hidden>
+          <div class="page-title-row"><div><p class="eyebrow">KEHADIRAN SISWA</p><h1>Scan Absensi</h1><p class="muted">Buka sesi kelas, lalu arahkan kamera ke QR Code kartu siswa.</p></div><div class="session-status-pill" id="scanner-status">Sesi belum dipilih</div></div>
+          <section class="panel session-controls">
+            <div class="control-grid">
+              <label>Tanggal absensi<input id="session-date" type="date"></label>
+              <label>Kelas<select id="session-class"><option value="">Pilih kelas</option></select></label>
+              <button id="open-session-button" class="button primary">Buka Sesi</button>
+            </div>
+            <div class="session-select-row"><label>Sesi berjalan<select id="session-select"><option value="">Pilih sesi absensi</option></select></label><button id="close-session-button" class="button danger-outline" disabled>Tutup Sesi</button></div>
+          </section>
+          <div class="scanner-grid">
+            <section class="panel scanner-panel">
+              <div class="panel-heading"><div><p class="eyebrow">PEMINDAI QR</p><h2>Arahkan kartu ke kamera</h2></div><span class="camera-indicator"><i></i> Kamera</span></div>
+              <div class="camera-frame"><video id="camera-video" playsinline muted></video><div class="camera-overlay"><span></span></div><div id="camera-placeholder" class="camera-placeholder"><span class="camera-icon">▦</span><strong>Kamera siap digunakan</strong><small>Izinkan akses kamera saat diminta.</small></div></div>
+              <div class="scanner-actions"><button id="start-camera" class="button primary">Aktifkan Kamera</button><button id="stop-camera" class="button secondary" disabled>Matikan Kamera</button></div>
+              <p id="camera-permission-help" class="camera-help" role="status"></p>
+              <details class="manual-scan"><summary>Input kode QR secara manual</summary><div class="manual-scan-row"><input id="manual-token" placeholder="Masukkan token QR"><button id="manual-scan-button" class="button secondary">Catat Hadir</button></div></details>
+            </section>
+            <section class="panel roster-panel">
+              <div class="panel-heading"><div><p class="eyebrow">DAFTAR KELAS</p><h2>Siswa dalam sesi</h2></div><span id="roster-count" class="count-badge">0 siswa</span></div>
+              <div id="last-scan" class="last-scan" hidden></div>
+              <div class="table-wrap roster-table-wrap"><table><thead><tr><th>Nama siswa</th><th>NIS</th><th>Status</th></tr></thead><tbody id="roster-body"><tr><td colspan="3" class="table-empty">Pilih sesi untuk melihat daftar.</td></tr></tbody></table></div>
+            </section>
+          </div>
+          <section id="audit-panel" class="panel audit-panel" hidden><div class="panel-heading"><div><p class="eyebrow">RIWAYAT PERUBAHAN</p><h2>Audit status absensi</h2></div></div><div id="audit-list" class="audit-list"></div></section>
+        </section>
+
+        <section class="page-view" data-view="students" hidden>
+          <div class="page-title-row"><div><p class="eyebrow">DATA MASTER</p><h1>Data Siswa</h1><p class="muted">Kelola identitas siswa dan kelas dengan mudah.</p></div><button id="add-student-button" class="button primary">＋ Tambah Siswa</button></div>
+          <section class="panel table-panel">
+            <div class="table-toolbar"><label class="search-field"><span>⌕</span><input id="student-search" placeholder="Cari nama atau NIS..."></label><label class="filter-label">Kelas<select id="student-class-filter"><option value="">Semua kelas</option></select></label><span id="student-count" class="muted table-count"></span></div>
+            <div class="table-wrap"><table><thead><tr><th>Siswa</th><th>NIS</th><th>Kelas</th><th>QR Code</th><th>Aksi</th></tr></thead><tbody id="students-body"></tbody></table></div>
+          </section>
+        </section>
+
+        <section class="page-view" data-view="reports" hidden>
+          <div class="page-title-row"><div><p class="eyebrow">LAPORAN SEKOLAH</p><h1>Rekap Absensi</h1><p class="muted">Laporan bersumber langsung dari catatan absensi tersimpan.</p></div></div>
+          <section class="panel report-panel">
+            <div class="report-filters">
+              <label>Periode<select id="report-period"><option value="daily">Harian</option><option value="weekly">Mingguan</option><option value="monthly">Bulanan</option></select></label>
+              <label id="report-date-wrap">Tanggal<input id="report-date" type="date"></label>
+              <label id="report-month-wrap" hidden>Bulan<input id="report-month" type="month"></label>
+              <label>Kelas<select id="report-class"><option value="">Semua kelas</option></select></label>
+              <label class="report-search-label">Cari siswa<input id="report-search" placeholder="Nama atau NIS"></label>
+              <button id="report-refresh" class="button secondary">Tampilkan</button>
+            </div>
+            <div id="report-range" class="report-range"></div>
+            <div class="report-stats">
+              <span><i class="legend-dot blue"></i>Hadir <strong id="report-hadir">0</strong></span>
+              <span><i class="legend-dot orange"></i>Izin <strong id="report-izin">0</strong></span>
+              <span><i class="legend-dot purple"></i>Sakit <strong id="report-sakit">0</strong></span>
+              <span><i class="legend-dot red"></i>Alpa <strong id="report-alpa">0</strong></span>
+            </div>
+            <div class="report-actions"><button id="export-excel" class="button secondary">Unduh Excel</button><button id="export-pdf" class="button secondary">Unduh PDF</button><button id="print-report" class="button secondary">Cetak laporan</button></div>
+            <div class="table-wrap"><table><thead><tr><th>Nama siswa</th><th>NIS</th><th>Kelas</th><th>Hadir</th><th>Izin</th><th>Sakit</th><th>Alpa</th><th>% Kehadiran</th></tr></thead><tbody id="report-body"></tbody></table></div>
+          </section>
+        </section>
+
+        <section class="page-view" data-view="cards" hidden>
+          <div class="page-title-row"><div><p class="eyebrow">IDENTITAS SISWA</p><h1>Kartu Absensi</h1><p class="muted">Cetak kartu dengan QR Code unik untuk setiap siswa.</p></div><button id="print-all-cards" class="button primary">▣ Cetak Semua Kartu</button></div>
+          <section class="panel table-panel">
+            <div class="table-toolbar"><label class="search-field"><span>⌕</span><input id="card-search" placeholder="Cari nama atau NIS..."></label><label class="filter-label">Kelas<select id="card-class-filter"><option value="">Semua kelas</option></select></label><span class="muted">Pilih cetak untuk membuat kartu siswa.</span></div>
+            <div class="table-wrap"><table><thead><tr><th>Siswa</th><th>NIS</th><th>Kelas</th><th>Aksi</th></tr></thead><tbody id="cards-body"></tbody></table></div>
+          </section>
+        </section>
+
+        <section class="page-view" data-view="settings" hidden>
+          <div class="page-title-row"><div><p class="eyebrow">AKUN ADMIN</p><h1>Pengaturan</h1><p class="muted">Ubah kredensial akun guru dan lindungi akses dashboard.</p></div></div>
+          <section class="panel settings-panel">
+            <div class="settings-heading"><span class="settings-icon">♙</span><div><h2>Ganti password</h2><p class="muted">Gunakan password unik dengan minimal 12 karakter.</p></div></div>
+            <form id="password-form" class="settings-form">
+              <label>Password saat ini<input name="current_password" type="password" autocomplete="current-password" required></label>
+              <label>Password baru<input name="new_password" type="password" autocomplete="new-password" minlength="12" required></label>
+              <label>Konfirmasi password baru<input name="confirm_password" type="password" autocomplete="new-password" minlength="12" required></label>
+              <p id="password-message" class="form-message" role="status"></p>
+              <button class="button primary" type="submit">Simpan password</button>
+            </form>
+            <div class="security-note"><span>✓</span><p>Password disimpan dalam bentuk hash aman. Data absensi berada di database lokal server dan hanya dapat diakses setelah login.</p></div>
+          </section>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <dialog id="student-dialog" class="modal">
+    <form id="student-form" class="modal-card">
+      <div class="modal-heading"><div><p class="eyebrow">DATA SISWA</p><h2 id="student-dialog-title">Tambah Siswa</h2></div><button type="button" class="icon-button" data-close-dialog="student-dialog" aria-label="Tutup">×</button></div>
+      <input name="id" type="hidden">
+      <label>Nama lengkap<input name="name" maxlength="120" required></label>
+      <label>Nomor induk siswa (NIS)<input name="nis" maxlength="40" required></label>
+      <label>Kelas<input name="class_name" maxlength="60" required placeholder="Contoh: 7A"></label>
+      <label>Foto (opsional, URL)<input name="photo_url" type="url" placeholder="https://..."></label>
+      <p id="student-form-error" class="form-error" role="alert"></p>
+      <div class="modal-actions"><button type="button" class="button secondary" data-close-dialog="student-dialog">Batal</button><button type="submit" class="button primary">Simpan Siswa</button></div>
+    </form>
+  </dialog>
+  <dialog id="card-dialog" class="modal card-modal"><div class="modal-card"><div class="modal-heading no-print"><div><p class="eyebrow">KARTU IDENTITAS</p><h2>Pratinjau Kartu</h2></div><button type="button" class="icon-button" data-close-dialog="card-dialog" aria-label="Tutup">×</button></div><div id="card-preview"></div><div class="modal-actions no-print"><button type="button" class="button secondary" data-close-dialog="card-dialog">Tutup</button><button id="print-card-button" type="button" class="button primary">Cetak Kartu</button></div></div></dialog>
+  <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="true"></div>
+</body>
+</html>
