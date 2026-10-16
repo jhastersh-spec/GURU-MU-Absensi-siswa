@@ -341,6 +341,11 @@ def create_app(test_config=None):
     def index():
         return render_template("index.html")
 
+    @application.get("/healthz")
+    def health_check():
+        get_db().execute("SELECT 1")
+        return jsonify({"status": "ok"})
+
     @application.get("/api/auth")
     def auth_status():
         if "csrf_token" not in session:

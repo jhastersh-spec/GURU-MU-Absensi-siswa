@@ -139,6 +139,11 @@ class AttendanceApplicationTests(unittest.TestCase):
         self.assertIn("camera=(self)", response.headers["Permissions-Policy"])
         self.assertEqual(response.headers["Cache-Control"], "no-store")
 
+    def test_health_check_is_public_and_confirms_database_access(self):
+        response = self.client.get("/healthz")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json(), {"status": "ok"})
+
     def test_existing_user_database_migration_does_not_force_password_change(self):
         legacy_path = Path(self.directory.name) / "legacy.db"
         with sqlite3.connect(legacy_path) as db:
